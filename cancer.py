@@ -6,36 +6,34 @@ from sklearn.preprocessing import StandardScaler
 class Cancer:
     scaler: StandardScaler | None = None
 
-    def __init__(self, label, data):
+    def __init__(self, id, label, data_row):
+        self.id = id
         self.label = label
-        self.data = data
-        self.similarity = 0.0
-
-    def get_label(self):
-        return self.label
+        self.data = data_row  # pandas Series
+        self.similarity = 999
 
     def set_similarity(self, other):
-        cols = [c for c in self.data.index
-                if c not in ('id', 'diagnosis', 'Unnamed: 32')]
-        x = self.data[cols].to_numpy(dtype=float).reshape(1, -1)
-        y = other.data[cols].to_numpy(dtype=float).reshape(1, -1)
+        if Cancer.scaler is None:
+            raise RuntimeError("Cancer.scaler not fitted")
 
-        x_std = Cancer.scaler.transform(x)[0]
-        y_std = Cancer.scaler.transform(y)[0]
+        feat_cols = [c for c in self.data.index
+                     if c not in ('id', 'diagnosis', 'Unnamed: 32')]
+
+        x = pd.DataFrame([self.data[feat_cols].values], columns=feat_cols)
+        y = pd.DataFrame([other.data[feat_cols].values], columns=feat_cols)
+
+        x_std = Cancer.scaler.transform(x).flatten()
+        y_std = Cancer.scaler.transform(y).flatten()
 
         cos = float(np.dot(x_std, y_std) / (norm(x_std) * norm(y_std)))
-        self.similarity = (cos + 1) * 0.5
+        self.similarity = 0.5 * (cos + 1)
 
 
     def get_similarity(self):
         return self.similarity
 
-    def __str__(self):
-        display = f"label = {self.label} \n"
-        # display += f"similarity = {self.get_similarity()} \n|"
-        if self.get_similarity() == 0:
-            display += " " * 30 + "\n|"
-        else:
-            display += f"similarity = {self.get_similarity():.5f}"
-            display += " " * 10 + "\n|"
-        return display
+    def get_label(self):
+        return self.label
+
+    def __str__(self) -> str:
+        return f"id={self.id} label={self.label}  sim={self.similarity:.4f}"

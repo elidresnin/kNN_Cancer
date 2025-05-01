@@ -1,26 +1,18 @@
 from CancerMatcher import CancerMatcher
 from cancer import Cancer
-from PrintHelper import PrintHelper
+import pandas as pd
 
-class DigitMatcherRunner:
+class CancerMatcherRunner:
     @staticmethod
     def populate_array_of_test_data(test_data_file_path):
-
         test_data = []
 
         try:
-            with open(test_data_file_path, 'r') as f:
-                for line in f:
-                    # Split the line into pixel values
-                    values = line.strip().split(',')
-                    label = int(values[0])
-                    # Convert pixel values to integers (0 or 1)
-                    data = [0 if int(x) == 0 else 1 for x in values]
-
-                    # Create a Digit object with a dummy label (-1) since test data has no labels
-                    test_digit = Cancer(label, data)
-                    test_data.append(test_digit)
-
+            data = pd.read_csv(test_data_file_path)
+            test_data: list[Cancer] = [
+                Cancer(row["id"], row["diagnosis"], row)  # row is a Series
+                 for _, row in data.iterrows()
+            ]
             return test_data
 
         except FileNotFoundError:
@@ -32,63 +24,58 @@ class DigitMatcherRunner:
 
     @staticmethod
     def main():
-        # Test Activity 2
-        print("Activity 2 - Read digits from an input file")
-        # digit_collection = DigitMatcher("small_train.csv")
-        # print(digit_collection.get_digits()[0])
-
-        # Testing Activity 3
-        print("Activity 3 - Compare two digits")
-        # firstDigit = digit_collection.get_digits()[1]
-        # secondDigit = digit_collection.get_digits()[5]
-        # firstDigit.set_similarity(secondDigit)
-        #print(firstDigit)
-        #print(secondDigit)
-
-        # Get test digits
-        # test_digits = DigitMatcherRunner.populate_array_of_test_digits("small_test.csv")
-        # testDigit = test_digits[10]
-
-        # Testing Activity 4
-        print("Activity 4 - Find most similar")
-        # digit_collection.compute_similarity(testDigit)
-        # print(firstDigit)
-        # print(digit_collection.most_similar())
-
-        print("Activity 5 - Find kNN")
-        k = 5
-        # kNN = digit_collection.find_k_most_similar(k)
-        # print("kNN digit's label is " + str(digit_collection.k_nearest_neighbors(k)))
-        # PrintHelper.print(firstDigit, kNN)
-        # print(digit_collection.k_nearest_neighbors(3))
-
-
-        print("Activity 6 - Weighted kNN")
-        # print("Weighted kNN digit's label is " + str(digit_collection.weighted_k_nearest_neighbors(k)))
-        # PrintHelper.print(firstDigit, kNN)
-
-        print("\nActivity 7 - Test Accuracy")
 
         # Read digits from an input file
-        digit_collection = DigitMatcher("train.csv")
+        data_collection = CancerMatcher("train.csv")
 
         # Get test digits
-        test_digits = DigitMatcherRunner.populate_array_of_test_digits("test.csv")
+        test_data = CancerMatcherRunner.populate_array_of_test_data("test.csv")
+        # # Test Activity 2
+        # print("Activity 2 - Read digits from an input file")
+        #
+        # print("done")
+        #
+        # # Testing Activity 3
+        # print("Activity 3 - Compare two digits")
+        # firstCancer = data_collection.cases[1]
+        # secondCancer = data_collection.cases[5]
+        # firstCancer.set_similarity(secondCancer)
+        # print(firstCancer)
+        # print(secondCancer)
+        #
+        #
+        #
+        # # Testing Activity 4
+        # print("Activity 4 - Find most similar")
+        # data_collection.compute_similarity(test_data[1])
+        # # print(firstCancer)
+        # print(data_collection.most_similar())
+        #
+        # # print("Activity 5 - Find kNN")
+        # k = 5
+        # kNN = data_collection.find_k_most_similar(k)
+        # print("kNN digit's label is " + str(data_collection.k_nearest_neighbors(k)))
+        # print(firstCancer)
+        # print(kNN)
+        # print(data_collection.k_nearest_neighbors(3))
 
-        k = 8
+
+
+        k = 3
+        count = 0
 
         sim_correct_predictions = 0
         knn_correct_predictions = 0
         wknn_correct_predictions = 0
 
-        total_tests = len(test_digits)
+        total_tests = len(test_data)
 
-        for test_digit in test_digits:
-            digit_collection.compute_similarity(test_digit)
-            sim_predicted_label = digit_collection.most_similar()
-            knn_predicted_label = digit_collection.k_nearest_neighbors(k)
-            wknn_predicted_label = digit_collection.weighted_k_nearest_neighbors(k)
-            true_label = test_digit.get_label()
+        for case in test_data:
+            data_collection.compute_similarity(case)
+            sim_predicted_label = data_collection.most_similar()
+            knn_predicted_label = data_collection.k_nearest_neighbors(k)
+            wknn_predicted_label = data_collection.weighted_k_nearest_neighbors(k)
+            true_label = case.get_label()
             print("--------")
             if sim_predicted_label.get_label() == true_label:
                 sim_correct_predictions += 1
@@ -104,6 +91,9 @@ class DigitMatcherRunner:
                 wknn_correct_predictions += 1
             else:
                 print("wknn guessed label: " + str(wknn_predicted_label) + "; correct label: " + str(true_label))
+            count +=1
+            print(str(count) + "/" + str(total_tests))
+
 
 
         print("------------------------------------------------------------------------")
@@ -112,4 +102,4 @@ class DigitMatcherRunner:
         print(f"Weighted kNN most similar Accuracy using k = {k}: {(wknn_correct_predictions / total_tests):.2%}")
 
 if __name__ == "__main__":
-    DigitMatcherRunner.main()
+    CancerMatcherRunner.main()
